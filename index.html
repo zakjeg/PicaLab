@@ -13,8 +13,8 @@
       --muted:#5b6577;
       --card:rgba(255,255,255,.7);
       --stroke:rgba(15,23,42,.12);
-      --accent:#39b54a;    /* nežno zeleno */
-      --accent2:#4aa3ff;   /* nežno modro */
+      --accent:#39b54a;
+      --accent2:#4aa3ff;
       --shadow: 0 18px 60px rgba(0,0,0,.10);
     }
     *{box-sizing:border-box}
@@ -30,7 +30,7 @@
       overflow:hidden;
     }
 
-    /* Subtilen “grain” */
+    /* subtle grain */
     body::before{
       content:"";
       position:fixed; inset:-20%;
@@ -58,9 +58,11 @@
       padding:34px;
       position:relative;
       overflow:hidden;
+      transform: translateZ(0);
+      will-change: transform;
     }
 
-    /* Plavajoči “blobs” */
+    /* floating blobs */
     .blob{
       position:absolute;
       width:420px; height:420px;
@@ -102,7 +104,6 @@
       color:white;
       font-size:20px;
       user-select:none;
-      transform: translateZ(0);
     }
 
     .pill{
@@ -182,6 +183,7 @@
       display:grid; place-items:center;
       font-size:18px;
       user-select:none;
+      flex: 0 0 auto;
     }
     .feature b{display:block; margin-bottom:4px}
     .feature p{margin:0; color:var(--muted); font-size:14px; line-height:1.35}
@@ -221,7 +223,7 @@
       align-items:center;
     }
 
-    /* Typewriter caret */
+    /* typewriter caret */
     .tw{
       display:inline-flex;
       gap:6px;
@@ -237,7 +239,7 @@
     }
     @keyframes blink{ 50%{ opacity:0 } }
 
-    /* Toast */
+    /* toast */
     .toast{
       position: fixed;
       left:50%;
@@ -260,6 +262,34 @@
       transform: translateX(-50%) translateY(0);
     }
     a{ color: inherit; }
+
+    /* === Mobile-only tweaks (desktop unchanged) === */
+    @media (max-width: 520px){
+      body{ overflow:auto; }                 /* allow scroll */
+      .wrap{ padding:16px; place-items:start; }
+      .card{ padding:18px; border-radius:18px; }
+
+      header{ margin-bottom:14px; }
+      .logo{ width:38px; height:38px; border-radius:12px; }
+      .pill{ padding:6px 9px; font-size:11px; }
+
+      h1{ font-size: 36px; line-height:1.05; }
+      .sub{ font-size:15px; margin-top:10px; }
+
+      .ctaRow{ gap:8px; }
+      .btn{ width:100%; padding:12px 14px; }  /* stack buttons */
+      .tiny{ width:100%; gap:8px; }
+      .tw{ white-space:normal; }              /* allow wrap */
+      .caret{ display:none; }                 /* cleaner */
+
+      .grid{ margin-top:16px; gap:10px; }
+      .feature{ padding:12px; border-radius:14px; }
+      .icon{ width:34px; height:34px; border-radius:12px; }
+
+      .blob{ width:260px; height:260px; opacity:.26; filter: blur(18px); }
+      .blob.a{ left:-120px; top:-140px; }
+      .blob.b{ right:-140px; bottom:-160px; }
+    }
   </style>
 </head>
 <body>
@@ -289,6 +319,7 @@
       <div class="ctaRow">
         <button class="btn primary" id="notifyBtn">Obvesti me, ko bo live</button>
         <button class="btn" id="copyBtn">Kopiraj status link</button>
+
         <span class="tiny">
           <span>Trenutno gradimo:</span>
           <span class="tw"><strong id="type"></strong><span class="caret"></span></span>
@@ -303,6 +334,7 @@
             <p>Hidracija, sol, kvas/droži — za 1 ali 12 pic, brez komplikacij.</p>
           </div>
         </div>
+
         <div class="feature">
           <div class="icon">⏱️</div>
           <div>
@@ -310,6 +342,7 @@
             <p>Plan od mešanja do peke: hladna fermentacija, balling, proofing.</p>
           </div>
         </div>
+
         <div class="feature">
           <div class="icon">🔥</div>
           <div>
@@ -320,8 +353,8 @@
       </section>
 
       <p class="tiny" style="margin-top:18px">
-        Made in 🇸🇮 • “Coming soon” landing • kontakt: <a href="mailto:hello@picalab.si">hello@picalab.si</a>
-        (spremeni mail po želji)
+        Made in 🇸🇮 • “Coming soon” landing • kontakt:
+        <a href="mailto:hello@picalab.si">hello@picalab.si</a>
       </p>
     </main>
   </div>
@@ -329,32 +362,32 @@
   <div class="toast" id="toast">✅ Kopirano!</div>
 
   <script>
-    // Subtilen tilt efekt na kartici (miška)
+    // ---- Tilt effect (desktop only) ----
     const card = document.getElementById("card");
     const maxTilt = 6;
+    const isMobile = window.matchMedia("(max-width: 520px)").matches;
 
-    window.addEventListener("mousemove", (e) => {
-      const r = card.getBoundingClientRect();
-      const cx = r.left + r.width / 2;
-      const cy = r.top + r.height / 2;
-      const dx = (e.clientX - cx) / (r.width / 2);
-      const dy = (e.clientY - cy) / (r.height / 2);
-      const rx = Math.max(-1, Math.min(1, -dy)) * maxTilt;
-      const ry = Math.max(-1, Math.min(1, dx)) * maxTilt;
-      card.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
-    });
-    window.addEventListener("mouseleave", () => {
-      card.style.transform = `rotateX(0deg) rotateY(0deg)`;
-    });
+    if (!isMobile) {
+      window.addEventListener("mousemove", (e) => {
+        const r = card.getBoundingClientRect();
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height / 2;
+        const dx = (e.clientX - cx) / (r.width / 2);
+        const dy = (e.clientY - cy) / (r.height / 2);
+        const rx = Math.max(-1, Math.min(1, -dy)) * maxTilt;
+        const ry = Math.max(-1, Math.min(1, dx)) * maxTilt;
+        card.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+      });
 
-    // Typewriter: stvari, ki jih gradite
-    const items = [
-      "dough calculator",
-      "hydration ratios",
-      "fermentation timeline",
-      "bake guide",
-      "pizza planning"
-    ];
+      window.addEventListener("mouseleave", () => {
+        card.style.transform = `rotateX(0deg) rotateY(0deg)`;
+      });
+    } else {
+      card.style.transform = "none";
+    }
+
+    // ---- Typewriter ----
+    const items = ["dough calculator","hydration ratios","fermentation timeline","bake guide","pizza planning"];
     const el = document.getElementById("type");
     let i = 0, j = 0, deleting = false;
 
@@ -380,7 +413,7 @@
     }
     tick();
 
-    // Toast helper
+    // ---- Toast helper ----
     const toast = document.getElementById("toast");
     function showToast(msg){
       toast.textContent = msg;
@@ -388,12 +421,11 @@
       setTimeout(() => toast.classList.remove("show"), 1200);
     }
 
-    // Fake notify (hitro za MVP) – samo pokaže toast
+    // ---- Buttons ----
     document.getElementById("notifyBtn").addEventListener("click", () => {
-      showToast("✨ Super — dodajmo to kasneje na email form.");
+      showToast("✨ Super — email form dodamo kasneje.");
     });
 
-    // Copy link button
     document.getElementById("copyBtn").addEventListener("click", async () => {
       try{
         await navigator.clipboard.writeText(window.location.href);
