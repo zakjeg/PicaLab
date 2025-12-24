@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="sl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PicaLab — Kalkulator testa</title>
+  <meta name="description" content="PicaLab kalkulator testa — v razvoju." />
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="wrap">
+    <main class="card">
+      <header>
+        <div class="brand">
+          <div class="logo">🍕</div>
+          <div>PicaLab</div>
+        </div>
+        <a class="btn backLink" href="index.html">
+            ← <span class="backText">Nazaj</span>
+        </a>
+      </header>
+
+      <h1>Kalkulator testa</h1>
+      <p>
+        Tukaj bomo naredili pravi kalkulator (hidracija, sol, kvas/droži, št. pic).
+        Zaenkrat je to “landing” za implementacijo.
+      </p>
+
+      <div class="row controls" id="calcControls">
+        <label class="field field-type">
+          <span>Tip testa</span>
+          <select id="doughType">
+            <option value="neapolitan">Neapolitan</option>
+            <option value="ny">New York</option>
+            <option value="roman">Roman (pinsа/roman style)</option>
+            <option value="biga">Biga</option>
+            <option value="poolish">Poolish</option>
+            <option value="sourdough">Droži</option>
+          </select>
+        </label>
+      
+        <label class="field field-mass">
+          <span>Masa hlebčka (g)</span>
+          <input id="ballWeight" type="number" min="50" step="1" value="200" />
+        </label>
+      
+        <label class="field field-count">
+          <span>Število pic</span>
+          <input id="pizzaCount" type="number" min="1" step="1" value="6" />
+        </label>
+      
+        <button class="btn primary field-calc" id="calcBtn">Izračunaj</button>
+      </div>
+      
+      <!-- Output appears here -->
+      <div class="placeholder" id="calcOutput" hidden>
+        <p id="calcSummary" style="margin:10px 0 0;"></p>
+      
+        <table class="resultTable" id="resultTable" style="margin-top:12px; width:100%;">
+          <thead>
+            <tr>
+              <th>Sestavina</th>
+              <th>Količina (g)</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+  const doughTypeEl = document.getElementById("doughType");
+  const ballWeightEl = document.getElementById("ballWeight");
+  const pizzaCountEl = document.getElementById("pizzaCount");
+  const calcBtn = document.getElementById("calcBtn");
+
+  const output = document.getElementById("calcOutput");
+  const summary = document.getElementById("calcSummary");
+  const tableBody = document.querySelector("#resultTable tbody");
+
+  const doughLabels = {
+    neapolitan: "Neapolitan",
+    ny: "New York",
+    roman: "Roman (pinsа/roman style)",
+    biga: "Biga",
+    poolish: "Poolish",
+    sourdough: "Droži",
+  };
+
+  function formatNumber(n){
+    return Number.isFinite(n) ? n.toString() : "";
+  }
+
+  function renderResult(){
+    const dough = doughTypeEl.value;
+    const ballWeight = Number(ballWeightEl.value);
+    const pizzaCount = Math.trunc(Number(pizzaCountEl.value));
+  
+    if (!Number.isFinite(ballWeight) || ballWeight <= 0 || !Number.isFinite(pizzaCount) || pizzaCount <= 0){
+      output.hidden = false;
+      summary.textContent = "Prosim vnesi veljavne številke (masa > 0, št. pic ≥ 1).";
+      tableBody.innerHTML = "";
+      return;
+    }
+  
+    const totalDough = ballWeight * pizzaCount;
+  
+    const baseFor1000 = basePer1000ByType[dough] ?? basePer1000ByType.neapolitan;
+    const scaled = scaleFrom1000g(baseFor1000, totalDough);
+  
+    output.hidden = false;
+  
+    // vrstni red sestavin v tabeli
+    const order = [
+      ["moka", "Moka"],
+      ["voda", "Voda"],
+      ["sol", "Sol"],
+      ["suhiKvas", "Suhi kvas"],
+    ];
+  
+    // izpis tabele: sestavine + na koncu total
+    let rows = "";
+    for (const [key, label] of order) {
+      const grams = scaled[key] ?? 0;
+      rows += `<tr><td>${label}</td><td>${fmtG(grams)} g</td></tr>`;
+    }
+    rows += `<tr><td><b>Skupaj</b></td><td><b>${fmtG(totalDough)} g</b></td></tr>`;
+  
+    tableBody.innerHTML = rows;
+  }
+
+  calcBtn.addEventListener("click", renderResult);
+
+  [ballWeightEl, pizzaCountEl, doughTypeEl].forEach(el => {
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") renderResult();
+    });
+  });
+
+// Recepti so količine za 1000g testa (lahko jih kasneje prilagodiš / dodaš več tipov)
+const basePer1000ByType = {
+    neapolitan: { moka: 602.86, voda: 376.79, sol: 18.84, suhiKvas: 1.51},
+    ny:         { moka: 620, voda: 360, sol: 20, suhiKvas: 3 },
+    roman:      { moka: 580, voda: 410, sol: 18, suhiKvas: 2 },
+    biga:       { moka: 650, voda: 330, sol: 18, suhiKvas: 2 },
+    poolish:    { moka: 610, voda: 370, sol: 18, suhiKvas: 2 },
+    sourdough:  { moka: 600, voda: 380, sol: 20, suhiKvas: 0 }, // zaenkrat brez suhega kvasa
+  };
+  
+  // Skaluje recept za 1000g testa na poljubno skupno maso testa
+  function scaleFrom1000g(baseFor1000, targetTotalGrams) {
+    const factor = targetTotalGrams / 1000;
+  
+    const scaled = {};
+    for (const [name, grams] of Object.entries(baseFor1000)) {
+      scaled[name] = grams * factor;
+    }
+    return scaled;
+  }
+  
+  // Lepo formatiranje (npr. 123.4 g)
+  function fmtG(x) {
+    // 1 decimal če ni "lepo" celo, sicer celo
+    const rounded1 = Math.round(x * 10) / 10;
+    return Number.isInteger(rounded1) ? `${rounded1}` : `${rounded1.toFixed(1)}`;
+  }  
+</script>
+</body>
+</html>
